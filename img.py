@@ -2,6 +2,7 @@ import math
 import sys
 import time
 import random
+import io
 
 import json
 import urllib
@@ -27,7 +28,7 @@ checked = 0
 total = 0
 restart_flag = False
 ocommitsha = None
-version = "0\n"
+version = "1\n"
 
 #print("Template updated!")
 #seegit = None urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
@@ -35,39 +36,37 @@ version = "0\n"
 #ocommitsha = loadgit['object']['sha']
 
 def updateImg():
-    new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
-    if version != new_version:
-        print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
-        sys.exit(0)
-    seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
-    loadgit = json.loads(seegit)
-    ncommitsha = loadgit['object']['sha']
-    global ocommitsha
-    global img
-    global origin
+    try:
+        new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
+        if version != new_version:
+            print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
+            sys.exit(0)
+        seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
+        loadgit = json.loads(seegit)
+        ncommitsha = loadgit['object']['sha']
+        global img
+        global ocommitsha
+        global origin
 
-    if ocommitsha == ncommitsha:
-        print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
-        return False
-    else:
-        try:
-            img = Image.open('dash1.png')
-            img.close()
-        except:
-            pass
-        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
-        with open ('dash1.png', 'wb') as imgb:
-            imgb.write(im)
-        img = Image.open('dash1.png')
-        print("Template updated!")
-        ocommitsha = ncommitsha
-        try:
+        if ocommitsha == ncommitsha:
+            print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
+            return False
+        else:
+            if img is not None:
+                print("Update found! Waiting 60 seconds before downloading...")
+                time.sleep(60)
+            im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
+            img = Image.open(io.BytesIO(im))
+            print("Template updated!")
             new_origin = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/origin.txt').read().decode("utf-8").split(',')
             origin = (int(new_origin[0]), int(new_origin[1]))
             print(origin)
-        except:
-            print("Failed to fetch new image or the origin!")
+            ocommitsha = ncommitsha
         return True
+    except SystemExit:
+        raise SystemExit
+    except:
+        print("Failed to fetch new image or the origin! Will try next time! Waiting 5 seconds and trying again...")
 
 updateImg()
 
