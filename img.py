@@ -169,29 +169,29 @@ def shuffle2d(arr2d, rand=random):
     return [data[istart:iend] for (istart,iend) in reshape]
 
 while True:
-	print("starting image placement for img height: {}, width: {}".format(img.height, img.width))
-	arr2d = shuffle2d([[[i,j] for i in range(img.width)] for j in range(img.height)])
-	total = img.width * img.height
-	checked = 0
-	print("Probing...")
-	for y in range(img.width ):
-		for x in range(img.height ):
-			xx = arr2d[x][y]
-			pixel = img.getpixel((xx[0], xx[1]))
+    print("starting image placement for img height: {}, width: {}".format(img.height, img.width))
+    arr2d = shuffle2d([[[i,j] for i in range(img.width)] for j in range(img.height)])
+    total = img.width * img.height
+    checked = 0
+    print("Probing...")
+    for y in range(img.width ):
+        for x in range(img.height ):
+            xx = arr2d[x][y]
+            pixel = img.getpixel((xx[0], xx[1]))
 
-			if pixel[3] > 0:
-				pal = find_palette((pixel[0], pixel[1], pixel[2]))
+            if pixel[3] > 0:
+                pal = find_palette((pixel[0], pixel[1], pixel[2]))
 
-				ax = xx[0] + origin[0]
-				ay = xx[1] + origin[1]
+                ax = xx[0] + origin[0]
+                ay = xx[1] + origin[1]
 
-				place_pixel(ax, ay, pal)
-				checked += 1
-				percent = ((checked/total) * 100)
-	message = "All pixels placed, sleeping {}s..."
-	waitTime = 10
-	while(waitTime > 0):
-		m = message.format(waitTime)
-		time.sleep(1)
-		waitTime -= 1
-		print(m)
+                place_pixel(ax, ay, pal)
+                checked += 1
+                percent = ((checked/total) * 100)
+    message = "All pixels placed, sleeping {}s..."
+    waitTime = 10
+    while(waitTime > 0):
+        m = message.format(waitTime)
+        time.sleep(1)
+        waitTime -= 1
+        print(m)
