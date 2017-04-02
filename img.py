@@ -12,6 +12,8 @@ origin = (int(sys.argv[2]), int(sys.argv[3]))
 username = sys.argv[4]
 password = sys.argv[5]
 percent = 0
+checked = 0
+total = 0
 
 def find_palette(point):
     rgb_code_dictionary = {
@@ -66,30 +68,46 @@ def place_pixel(ax, ay, new_color):
         time.sleep(5)
 
     old_color = data["color"] if "color" in data else 0
-    if old_color == new_color:
-        print("{}: skipping, color #{} set by {}".format(message, new_color, data[
-            "user_name"] if "user_name" in data else "<nobody>"))
-        time.sleep(.25)
-    else:
+    #if old_color == new_color:
+        #print("{}: skipping, color #{} set by {}".format(message, new_color, data[
+            #"user_name"] if "user_name" in data else "<nobody>"))
+        #time.sleep(.25)
+    if old_color != new_color:
         print("{}: Placing color #{}".format(message, new_color, ax, ay))
         r = s.post("https://www.reddit.com/api/place/draw.json",
                    data={"x": str(ax), "y": str(ay), "color": str(new_color)})
 
         secs = float(r.json()["wait_seconds"])
         if "error" not in r.json():
-            message = "Placed color, waiting {} seconds. {}% complete."
+            waitTime = int(secs) -78
+            message = "Placed color, Starting search for next pixel in {} seconds. {}/{} complete."
+            m = message.format(waitTime, checked, total)
+            print(m)
+            message = "Starting search for next pixel in {} seconds. {}/{} complete."
+            while(waitTime > 0):
+                if(waitTime > 35):
+                    time.sleep(30)
+                    waitTime -= 30
+                else:
+                    time.sleep(1)
+                    waitTime -= 1
+                m = message.format(waitTime, checked, total)
+                print(m)
+            print("Probing...")
+            return
         else:
-            message = "Cooldown already active - waiting {} seconds. {}% complete."
+            message = "Cooldown already active - waiting {} seconds. {}/{} complete."
         waitTime = int(secs) + 2
         while(waitTime > 0):
-            m = message.format(waitTime, percent)
-            time.sleep(1)
-            waitTime -= 1
-            if waitTime > 0:
-                print(m, "end=              \r")
+            if(waitTime > 15):
+                time.sleep(10)
+                waitTime -= 10
             else:
-                print(m)
-
+                time.sleep(1)
+                waitTime -= 1
+            m = message.format(waitTime, checked, total)
+            print(m)
+        print("Probing...")
         if "error" in r.json():
             place_pixel(ax, ay, new_color)
 
@@ -111,6 +129,7 @@ while True:
 	arr2d = shuffle2d([[[i,j] for i in range(img.width)] for j in range(img.height)])
 	total = img.width * img.height
 	checked = 0
+	print("Probing...")
 	for y in range(img.width ):
 		for x in range(img.height ):
 			xx = arr2d[x][y]
@@ -124,14 +143,11 @@ while True:
 
 				place_pixel(ax, ay, pal)
 				checked += 1
-				percent = round((checked/total) * 100, 2)
+				percent = ((checked/total) * 100)
 	message = "All pixels placed, sleeping {}s..."
-	waitTime = 60
+	waitTime = 10
 	while(waitTime > 0):
 		m = message.format(waitTime)
 		time.sleep(1)
 		waitTime -= 1
-		if waitTime > 0:
-			print(m, "end=              \r")
-		else:
-			print(m)
+		print(m)
