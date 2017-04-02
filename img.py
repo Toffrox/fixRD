@@ -4,13 +4,20 @@ import time
 import random
 
 import json
-import urllib.request
+import urllib
 import requests
 from PIL import Image
 from requests.adapters import HTTPAdapter
 
+# Behold, the dirtiest code I ever wrote
+# This hacky hack serves as a bridge for urllib in Python 2 and Python 3
+try:
+    urllib.urlopen
+except:
+    urllib.urlopen = urllib.request.urlopen
+
 #img = Image.open(sys.argv[1])
-im = urllib.request.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
+im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
 origin = (int(sys.argv[1]), int(sys.argv[2]))
 username = sys.argv[3]
 password = sys.argv[4]
@@ -23,7 +30,7 @@ with open ('dash.png', 'wb') as imgb:
 img = Image.open('dash.png')
 
 print("Template updated!")
-seegit = urllib.request.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
+seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
 loadgit = json.loads(seegit)
 ocommitsha = loadgit['object']['sha']
 
@@ -67,7 +74,7 @@ r = s.post("https://www.reddit.com/api/login/{}".format(username),
 s.headers['x-modhash'] = r.json()["json"]["data"]["modhash"]
 
 def updateImg():
-    seegit = urllib.request.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
+    seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
     loadgit = json.loads(seegit)
     ncommitsha = loadgit['object']['sha']
     global ocommitsha
@@ -77,7 +84,7 @@ def updateImg():
     else:
         img = Image.open('dash.png')
         img.close()
-        im = urllib.request.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
+        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
         with open ('dash.png', 'wb') as imgb:
             imgb.write(im)
         img = Image.open('dash.png')
@@ -98,6 +105,8 @@ def place_pixel(ax, ay, new_color):
         time.sleep(5)
 
     old_color = data["color"] if "color" in data else 0
+    if old_color == new_color:
+        print("{}: skipping, color #{} set by {}".format(message, new_color, data["user_name"] if "user_name" in data else "<nobody>"))
     if old_color != new_color:
         updateImg()
         print("{}: Placing color #{}".format(message, new_color, ax, ay))
@@ -124,29 +133,13 @@ def place_pixel(ax, ay, new_color):
             return
         else:
             message = "Cooldown already active - waiting {} seconds. {}/{} complete."
+            m = message.format(waitTime, checked, total)
+            print(m)
         waitTime = int(secs) + 2
-        # Older method commented out. Less efficient than the one recommended by /u/Hithroc
-        # imgupdateTime = waitTime - 280
         while(waitTime > 0):
-            m = message.format(waitTime, percent)
-            time.sleep(1)
-            waitTime -= 1
-        #     imgupdateTime -= 1
-        #     updated = False
-        #     if imgupdateTime > 0:
-        #         rrrrrr = '5'
-        #     else:
-        #         img = Image.open('dash.png')
-        #         img.close()
-        #         im = urllib2.urlopen('https://raw.githubusercontent.com/ChangelingSpy/fixRD/master/dash.png').read()
-        #         with open ('dash.png', 'wb') as imgb:
-        #             imgb.write(im)
-        #         img = Image.open('dash.png')
-        #         print("Template updated!")
-        #         updated = True
-        #         imgupdateTime = 999
-            if waitTime > 0:
-                print(m, "end=              \r")
+            if (waitTime > 35):
+                time.sleep(30)
+                waitTime -= 30
             else:
                 time.sleep(1)
                 waitTime -= 1
