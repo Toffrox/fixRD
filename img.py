@@ -96,7 +96,12 @@ def place_pixel(ax, ay, new_color):
     message = "Probing absolute pixel {},{}".format(ax, ay)
 
     while True:
-        r = s.get("http://reddit.com/api/place/pixel.json?x={}&y={}".format(ax, ay), timeout=5)
+        try:
+            r = s.get("http://reddit.com/api/place/pixel.json?x={}&y={}".format(ax, ay), timeout=5)
+        except:
+            print("Failed to fetch pixel data! Retrying in 5 seconds...")
+            time.sleep(5)
+            continue
         if r.status_code == 200:
             data = r.json()
             break
