@@ -30,7 +30,7 @@ with open ('dash.png', 'wb') as imgb:
 img = Image.open('dash.png')
 
 print("Template updated!")
-seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
+seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
 loadgit = json.loads(seegit)
 ocommitsha = loadgit['object']['sha']
 
@@ -74,7 +74,7 @@ r = s.post("https://www.reddit.com/api/login/{}".format(username),
 s.headers['x-modhash'] = r.json()["json"]["data"]["modhash"]
 
 def updateImg():
-    seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
+    seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
     loadgit = json.loads(seegit)
     ncommitsha = loadgit['object']['sha']
     global ocommitsha
