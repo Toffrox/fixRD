@@ -77,7 +77,7 @@ def updateImg():
     else:
         img = Image.open('dash.png')
         img.close()
-        im = urllib.requset.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
+        im = urllib.request.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
         with open ('dash.png', 'wb') as imgb:
             imgb.write(im)
         img = Image.open('dash.png')
