@@ -37,10 +37,6 @@ version = "1\n"
 
 def updateImg():
     try:
-        new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
-        if version != new_version:
-            print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
-            sys.exit(0)
         seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
         loadgit = json.loads(seegit)
         ncommitsha = loadgit['object']['sha']
@@ -55,6 +51,10 @@ def updateImg():
             if img is not None:
                 print("Update found! Waiting 60 seconds before downloading...")
                 time.sleep(60)
+            new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
+            if version != new_version:
+                print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
+                sys.exit(0)
             im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
             img = Image.open(io.BytesIO(im))
             print("Template updated!")
