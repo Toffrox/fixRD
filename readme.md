@@ -10,6 +10,6 @@ When that's done, run
 
 When everything is installed, run
 
-    python img.py 760 406 USERNAME PASSWORD
+    python img.py USERNAME PASSWORD
 
 (substituting USERNAME and PASSWORD with your reddit username and password). If you have multiple reddit accounts, you can run multiple instances of the script at once with different credentials by opening more command prompts.
