@@ -1,3 +1,8 @@
+# fixRD
+## This bot updates templates automatically!
+
+**Note:** If you're getting redownload error message after you've already redownloaded the script, just give it time and try again in 5 minutes!
+
 You'll need Python and Pip (tested with Python 2.7).
 
 Navigate to your script directory and run:
