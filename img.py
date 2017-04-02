@@ -133,9 +133,9 @@ def place_pixel(ax, ay, new_color):
             return
         else:
             message = "Cooldown already active - waiting {} seconds. {}/{} complete."
-            m = message.format(waitTime, checked, total)
-            print(m)
         waitTime = int(secs) + 2
+        m = message.format(waitTime, checked, total)
+        print(m)
         while(waitTime > 0):
             if (waitTime > 35):
                 time.sleep(30)
