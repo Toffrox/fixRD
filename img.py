@@ -17,22 +17,56 @@ except:
     urllib.urlopen = urllib.request.urlopen
 
 #img = Image.open(sys.argv[1])
-im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
-origin = (int(sys.argv[1]), int(sys.argv[2]))
-username = sys.argv[3]
-password = sys.argv[4]
+img = None
+im = None # urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
+origin = None # (int(sys.argv[1]), int(sys.argv[2]))
+username = sys.argv[1]
+password = sys.argv[2]
 percent = 0
 checked = 0
 total = 0
+restart_flag = False
+ocommitsha = None
+version = "0\n"
 
-with open ('dash.png', 'wb') as imgb:
-    imgb.write(im)
-img = Image.open('dash.png')
+#print("Template updated!")
+#seegit = None urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
+#loadgit = json.loads(seegit)
+#ocommitsha = loadgit['object']['sha']
 
-print("Template updated!")
-seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
-loadgit = json.loads(seegit)
-ocommitsha = loadgit['object']['sha']
+def updateImg():
+    new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
+    if version != new_version:
+        print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
+        sys.exit(0)
+    seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
+    loadgit = json.loads(seegit)
+    ncommitsha = loadgit['object']['sha']
+    global ocommitsha
+    global img
+    global origin
+
+    if ocommitsha == ncommitsha:
+        print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
+        return False
+    else:
+        #img = Image.open('dash.png')
+        #img.close()
+        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash_new.png').read()
+        with open ('dash_new.png', 'wb') as imgb:
+            imgb.write(im)
+        img = Image.open('dash_new.png')
+        print("Template updated!")
+        ocommitsha = ncommitsha
+        try:
+            new_origin = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/origin.txt').read().decode("utf-8").split(',')
+            origin = (int(new_origin[0]), int(new_origin[1]))
+            print(origin)
+        except:
+            print("Failed to fetch new image or the origin!")
+        return True
+
+updateImg()
 
 def find_palette(point):
     rgb_code_dictionary = {
@@ -73,31 +107,14 @@ r = s.post("https://www.reddit.com/api/login/{}".format(username),
            data={"user": username, "passwd": password, "api_type": "json"})
 s.headers['x-modhash'] = r.json()["json"]["data"]["modhash"]
 
-def updateImg():
-    seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
-    loadgit = json.loads(seegit)
-    ncommitsha = loadgit['object']['sha']
-    global ocommitsha
-
-    if ocommitsha == ncommitsha:
-        print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
-    else:
-        img = Image.open('dash.png')
-        img.close()
-        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
-        with open ('dash.png', 'wb') as imgb:
-            imgb.write(im)
-        img = Image.open('dash.png')
-        print("Template updated!")
-        ocommitsha = ncommitsha
-
-
 def place_pixel(ax, ay, new_color):
     message = "Probing absolute pixel {},{}".format(ax, ay)
 
     while True:
         try:
             r = s.get("http://reddit.com/api/place/pixel.json?x={}&y={}".format(ax, ay), timeout=5)
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
         except:
             print("Failed to fetch pixel data! Retrying in 5 seconds...")
             time.sleep(5)
@@ -113,10 +130,17 @@ def place_pixel(ax, ay, new_color):
     if old_color == new_color:
         print("{}: skipping, color #{} set by {}".format(message, new_color, data["user_name"] if "user_name" in data else "<nobody>"))
     if old_color != new_color:
-        updateImg()
+        if updateImg():
+            global restart_flag
+            restart_flag = True
+            return
         print("{}: Placing color #{}".format(message, new_color, ax, ay))
-        r = s.post("https://www.reddit.com/api/place/draw.json",
-                   data={"x": str(ax), "y": str(ay), "color": str(new_color)})
+        try:
+            r = s.post("https://www.reddit.com/api/place/draw.json",
+                       data={"x": str(ax), "y": str(ay), "color": str(new_color)})
+        except:
+            print("Pixel post error! Continuing...")
+            return
 
         secs = float(r.json()["wait_seconds"])
         if "error" not in r.json():
@@ -169,12 +193,15 @@ def shuffle2d(arr2d, rand=random):
     return [data[istart:iend] for (istart,iend) in reshape]
 
 while True:
+    restart_flag = False
     print("starting image placement for img height: {}, width: {}".format(img.height, img.width))
     arr2d = shuffle2d([[[i,j] for i in range(img.width)] for j in range(img.height)])
     total = img.width * img.height
     checked = 0
     print("Probing...")
     for y in range(img.width ):
+        if restart_flag:
+            break
         for x in range(img.height ):
             xx = arr2d[x][y]
             pixel = img.getpixel((xx[0], xx[1]))
@@ -186,8 +213,13 @@ while True:
                 ay = xx[1] + origin[1]
 
                 place_pixel(ax, ay, pal)
+                if restart_flag:
+                    break
                 checked += 1
                 percent = ((checked/total) * 100)
+    if restart_flag:
+        print("Restarting...")
+        continue
     message = "All pixels placed, sleeping {}s..."
     waitTime = 10
     while(waitTime > 0):
