@@ -50,8 +50,11 @@ def updateImg():
         print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
         return False
     else:
-        #img = Image.open('dash.png')
-        #img.close()
+        try:
+            img = Image.open('dash1.png')
+            img.close()
+        except:
+            pass
         im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
         with open ('dash1.png', 'wb') as imgb:
             imgb.write(im)
