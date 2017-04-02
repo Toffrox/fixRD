@@ -3,17 +3,29 @@ import sys
 import time
 import random
 
+import json
+import urllib.request
 import requests
 from PIL import Image
 from requests.adapters import HTTPAdapter
 
-img = Image.open(sys.argv[1])
-origin = (int(sys.argv[2]), int(sys.argv[3]))
-username = sys.argv[4]
-password = sys.argv[5]
+#img = Image.open(sys.argv[1])
+im = urllib.request.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
+origin = (int(sys.argv[1]), int(sys.argv[2]))
+username = sys.argv[3]
+password = sys.argv[4]
 percent = 0
 checked = 0
 total = 0
+
+with open ('dash.png', 'wb') as imgb:
+    imgb.write(im)
+img = Image.open('dash.png')
+
+print("Template updated!")
+seegit = urllib.request.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
+loadgit = json.loads(seegit)
+ocommitsha = loadgit['object']['sha']
 
 def find_palette(point):
     rgb_code_dictionary = {
@@ -54,6 +66,24 @@ r = s.post("https://www.reddit.com/api/login/{}".format(username),
            data={"user": username, "passwd": password, "api_type": "json"})
 s.headers['x-modhash'] = r.json()["json"]["data"]["modhash"]
 
+def updateImg():
+    seegit = urllib.request.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read()
+    loadgit = json.loads(seegit)
+    ncommitsha = loadgit['object']['sha']
+    global ocommitsha
+
+    if ocommitsha == ncommitsha:
+        print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
+    else:
+        img = Image.open('dash.png')
+        img.close()
+        im = urllib.requset.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
+        with open ('dash.png', 'wb') as imgb:
+            imgb.write(im)
+        img = Image.open('dash.png')
+        print("Template updated!")
+        ocommitsha = ncommitsha
+
 
 def place_pixel(ax, ay, new_color):
     message = "Probing absolute pixel {},{}".format(ax, ay)
@@ -68,11 +98,8 @@ def place_pixel(ax, ay, new_color):
         time.sleep(5)
 
     old_color = data["color"] if "color" in data else 0
-    #if old_color == new_color:
-        #print("{}: skipping, color #{} set by {}".format(message, new_color, data[
-            #"user_name"] if "user_name" in data else "<nobody>"))
-        #time.sleep(.25)
     if old_color != new_color:
+        updateImg()
         print("{}: Placing color #{}".format(message, new_color, ax, ay))
         r = s.post("https://www.reddit.com/api/place/draw.json",
                    data={"x": str(ax), "y": str(ay), "color": str(new_color)})
@@ -98,10 +125,28 @@ def place_pixel(ax, ay, new_color):
         else:
             message = "Cooldown already active - waiting {} seconds. {}/{} complete."
         waitTime = int(secs) + 2
+        # Older method commented out. Less efficient than the one recommended by /u/Hithroc
+        # imgupdateTime = waitTime - 280
         while(waitTime > 0):
-            if(waitTime > 15):
-                time.sleep(10)
-                waitTime -= 10
+            m = message.format(waitTime, percent)
+            time.sleep(1)
+            waitTime -= 1
+        #     imgupdateTime -= 1
+        #     updated = False
+        #     if imgupdateTime > 0:
+        #         rrrrrr = '5'
+        #     else:
+        #         img = Image.open('dash.png')
+        #         img.close()
+        #         im = urllib2.urlopen('https://raw.githubusercontent.com/ChangelingSpy/fixRD/master/dash.png').read()
+        #         with open ('dash.png', 'wb') as imgb:
+        #             imgb.write(im)
+        #         img = Image.open('dash.png')
+        #         print("Template updated!")
+        #         updated = True
+        #         imgupdateTime = 999
+            if waitTime > 0:
+                print(m, "end=              \r")
             else:
                 time.sleep(1)
                 waitTime -= 1
@@ -110,6 +155,7 @@ def place_pixel(ax, ay, new_color):
         print("Probing...")
         if "error" in r.json():
             place_pixel(ax, ay, new_color)
+
 
 # From: http://stackoverflow.com/questions/27337784/how-do-i-shuffle-a-multidimensional-list-in-python
 def shuffle2d(arr2d, rand=random):
