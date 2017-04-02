@@ -52,10 +52,10 @@ def updateImg():
     else:
         #img = Image.open('dash.png')
         #img.close()
-        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash_new.png').read()
-        with open ('dash_new.png', 'wb') as imgb:
+        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
+        with open ('dash1.png', 'wb') as imgb:
             imgb.write(im)
-        img = Image.open('dash_new.png')
+        img = Image.open('dash1.png')
         print("Template updated!")
         ocommitsha = ncommitsha
         try:
