@@ -55,8 +55,6 @@ def updateImg():
     #except:
     #    print("Failed to fetch new image or the origin! Will try next time! Waiting 5 seconds and trying again...")
 
-updateImg()
-
 def find_palette(point):
     rgb_code_dictionary = {
         (255, 255, 255): 0,
@@ -96,123 +94,85 @@ r = s.post("https://www.reddit.com/api/login/{}".format(username),
            data={"user": username, "passwd": password, "api_type": "json"})
 s.headers['x-modhash'] = r.json()["json"]["data"]["modhash"]
 
+def fetch_canvas():
+    print("Fetching canvas...")
+
+    width = 1000
+    pixels = [list() for _ in range(width)]
+    content = None
+
+    try:
+        response = s.get('https://www.reddit.com/api/place/board-bitmap')
+        response.raise_for_status()
+        content = response.content[4:]
+    except KeyboardInterrupt:
+        raise KeyboardInterrupt
+    except:
+        print("Failed to fetch canvas! Retrying in 10 seconds...")
+        time.sleep(10)
+        return fetch_canvas() #Yes, this should be a loop and not recursive, but I'm lazy
+
+    for i, b in enumerate(content):
+        x = (i * 2) % width
+        pixels[x].append(ord(b) >> 4)
+        pixels[x+1].append(ord(b) & 0x0F)
+
+    return pixels
+
 def place_pixel(ax, ay, new_color):
-    message = "Probing absolute pixel {},{}".format(ax, ay)
+    print("Placing pixel at {},{} with color #{}".format(ax, ay, new_color))
 
-    while True:
-        try:
-            r = s.get("http://reddit.com/api/place/pixel.json?x={}&y={}".format(ax, ay), timeout=5)
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt
-        except:
-            print("Failed to fetch pixel data! Retrying in 5 seconds...")
-            time.sleep(5)
-            continue
-        if r.status_code == 200:
-            data = r.json()
-            break
+    try:
+        r = s.post("https://www.reddit.com/api/place/draw.json",
+                   data={"x": str(ax), "y": str(ay), "color": str(new_color)})
+    except:
+        print("Pixel post error! Pausing for 10 seconds...")
+        sleep(10)
+        return
+
+    secs = float(r.json()["wait_seconds"])
+    waitTime = int(secs) + 2
+    if "error" not in r.json():
+        message = "Placed color sucessfully. Starting search for next pixel in {} seconds."
+    else:
+        message = "Cooldown already active! Waiting for {} seconds."
+    while(waitTime > 0):
+        print(message.format(waitTime))
+        if(waitTime > 35):
+            time.sleep(30)
+            waitTime -= 30
+        elif(waitTime > 15):
+            time.sleep(10)
+            waitTime -= 10
         else:
-            print("ERROR: ", r, r.text)
-        time.sleep(5)
+            time.sleep(1)
+            waitTime -= 1
 
-    old_color = data["color"] if "color" in data else 0
-    if old_color == new_color:
-        print("{}: skipping, color #{} set by {}".format(message, new_color, data["user_name"] if "user_name" in data else "<nobody>"))
-    if old_color != new_color:
-        if updateImg():
-            global restart_flag
-            restart_flag = True
-            return
-        print("{}: Placing color #{}".format(message, new_color, ax, ay))
-        try:
-            r = s.post("https://www.reddit.com/api/place/draw.json",
-                       data={"x": str(ax), "y": str(ay), "color": str(new_color)})
-        except:
-            print("Pixel post error! Continuing...")
-            return
-
-        secs = float(r.json()["wait_seconds"])
-        if "error" not in r.json():
-            waitTime = int(secs) -78
-            message = "Placed color, Starting search for next pixel in {} seconds. {}/{} complete."
-            m = message.format(waitTime, checked, total)
-            print(m)
-            message = "Starting search for next pixel in {} seconds. {}/{} complete."
-            while(waitTime > 0):
-                if(waitTime > 35):
-                    time.sleep(30)
-                    waitTime -= 30
-                else:
-                    time.sleep(1)
-                    waitTime -= 1
-                m = message.format(waitTime, checked, total)
-                print(m)
-            print("Probing...")
-            return
-        else:
-            message = "Cooldown already active - waiting {} seconds. {}/{} complete."
-        waitTime = int(secs) + 2
-        m = message.format(waitTime, checked, total)
-        print(m)
-        while(waitTime > 0):
-            if (waitTime > 35):
-                time.sleep(30)
-                waitTime -= 30
-            else:
-                time.sleep(1)
-                waitTime -= 1
-            m = message.format(waitTime, checked, total)
-            print(m)
-        print("Probing...")
-        if "error" in r.json():
-            place_pixel(ax, ay, new_color)
-
-
-# From: http://stackoverflow.com/questions/27337784/how-do-i-shuffle-a-multidimensional-list-in-python
-def shuffle2d(arr2d, rand=random):
-    """Shuffes entries of 2-d array arr2d, preserving shape."""
-    reshape = []
-    data = []
-    iend = 0
-    for row in arr2d:
-        data.extend(row)
-        istart, iend = iend, iend+len(row)
-        reshape.append((istart, iend))
-    rand.shuffle(data)
-    return [data[istart:iend] for (istart,iend) in reshape]
 
 while True:
-    restart_flag = False
-    print("starting image placement for img height: {}, width: {}".format(img.height, img.width))
-    arr2d = shuffle2d([[[i,j] for i in range(img.width)] for j in range(img.height)])
+    updateImg()
+    canvas = fetch_canvas()
+
+    print("Searching for corruption in image with height: {}, width: {}".format(img.height, img.width))
+    
     total = img.width * img.height
-    checked = 0
-    print("Probing...")
-    for y in range(img.width ):
-        if restart_flag:
-            break
-        for x in range(img.height ):
-            xx = arr2d[x][y]
-            pixel = img.getpixel((xx[0], xx[1]))
+    points = range(total)
+    random.shuffle(points)
 
-            if pixel[3] > 0:
-                pal = find_palette((pixel[0], pixel[1], pixel[2]))
+    for i in range(total):
+        point = points[i]
+        xy = [point % img.width, point / img.width]
+        pixel = img.getpixel((xy[0], xy[1]))
 
-                ax = xx[0] + origin[0]
-                ay = xx[1] + origin[1]
+        if pixel[3] > 0:
+            pal = find_palette((pixel[0], pixel[1], pixel[2]))
 
+            ax = xy[0] + origin[0]
+            ay = xy[1] + origin[1]
+
+            #print("{}: Checking point {},{}. Expected: {}. Found: {}".format(i, ax, ay, pal, canvas[ax][ay]))
+            if(canvas[ax][ay] != pal):
+                print("Found corruption after {} pixels at {},{}. Expected: {}, Found: {}".format(i, ax, ay, pal, canvas[ax][ay]))
                 place_pixel(ax, ay, pal)
-                if restart_flag:
-                    break
-                checked += 1
-                percent = ((checked/total) * 100)
-    if restart_flag:
-        print("Restarting...")
-        continue
-    message = "All pixels placed, sleeping {}s..."
-    waitTime = 10
-    while(waitTime > 0):
-        m = message.format(waitTime)
-        time.sleep(1)
-        waitTime -= 1
-        print(m)
+                break
+    print()
