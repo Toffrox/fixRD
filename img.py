@@ -131,6 +131,8 @@ def place_pixel(ax, ay, new_color):
     try:
         r = s.post("https://www.reddit.com/api/place/draw.json",
                    data={"x": str(ax), "y": str(ay), "color": str(new_color)})
+        # Evaluate json
+        r.json()
     except:
         print("Pixel post error! Pausing for 10 seconds...")
         time.sleep(10)
