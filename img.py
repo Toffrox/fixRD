@@ -8,6 +8,7 @@ import json
 import urllib
 import requests
 from PIL import Image
+from PIL import ImageChops
 from requests.adapters import HTTPAdapter
 
 # Behold, the dirtiest code I ever wrote
@@ -17,9 +18,7 @@ try:
 except:
     urllib.urlopen = urllib.request.urlopen
 
-#img = Image.open(sys.argv[1])
 img = None
-im = None # urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash.png').read()
 origin = None # (int(sys.argv[1]), int(sys.argv[2]))
 username = sys.argv[1]
 password = sys.argv[2]
@@ -30,43 +29,31 @@ restart_flag = False
 ocommitsha = None
 version = "1\n"
 
-#print("Template updated!")
-#seegit = None urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
-#loadgit = json.loads(seegit)
-#ocommitsha = loadgit['object']['sha']
-
 def updateImg():
     try:
-        seegit = urllib.urlopen('https://api.github.com/repos/hithroc/fixRD/git/refs/heads/master').read().decode("utf-8")
-        loadgit = json.loads(seegit)
-        ncommitsha = loadgit['object']['sha']
         global img
         global ocommitsha
         global origin
 
-        if ocommitsha == ncommitsha:
-            print('Master branch commit\'s SHA-1 has not changed on the Github repo.')
+        new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
+        if version != new_version:
+            print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
+            sys.exit(0)
+        im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
+        new_img = Image.open(io.BytesIO(im))
+        if img is not None and ImageChops.difference(img, new_img).getbbox() is None:
+            print("Image hasn't been updated")
             return False
-        else:
-            if img is not None:
-                print("Update found! Waiting 60 seconds before downloading...")
-                time.sleep(60)
-            new_version = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/version.txt').read().decode("utf-8")
-            if version != new_version:
-                print("!!! NEW VERSION OF THE SCRIPT IS AVALIABLE! PLEASE REDOWNLOAD! !!!")
-                sys.exit(0)
-            im = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/dash1.png').read()
-            img = Image.open(io.BytesIO(im))
-            print("Template updated!")
-            new_origin = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/origin.txt').read().decode("utf-8").split(',')
-            origin = (int(new_origin[0]), int(new_origin[1]))
-            print(origin)
-            ocommitsha = ncommitsha
+        img = new_img
+        print("Template updated!")
+        new_origin = urllib.urlopen('https://raw.githubusercontent.com/hithroc/fixRD/master/origin.txt').read().decode("utf-8").split(',')
+        origin = (int(new_origin[0]), int(new_origin[1]))
+        print(origin)
         return True
     except SystemExit:
         raise SystemExit
-    except:
-        print("Failed to fetch new image or the origin! Will try next time! Waiting 5 seconds and trying again...")
+    #except:
+    #    print("Failed to fetch new image or the origin! Will try next time! Waiting 5 seconds and trying again...")
 
 updateImg()
 
