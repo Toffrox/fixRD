@@ -53,7 +53,7 @@ def updateImg():
     except SystemExit:
         raise SystemExit
     except:
-        print("Failed to fetch new image or the origin! Waiting 5 secoonds...")
+        print("Failed to fetch new image or the origin! Waiting 5 seconds...")
         time.sleep(5)
 
 def find_palette(point):
@@ -139,7 +139,7 @@ def place_pixel(ax, ay, new_color):
     secs = float(r.json()["wait_seconds"])
     waitTime = int(secs) + 2
     if "error" not in r.json():
-        message = "Placed color sucessfully. Starting search for next pixel in {} seconds."
+        message = "Placed color successfully. Starting search for next pixel in {} seconds."
     else:
         message = "Cooldown already active! Waiting for {} seconds."
     while(waitTime > 0):
@@ -169,7 +169,7 @@ while True:
     foundCorruption = False
     for i in range(total):
         point = points[i]
-        # indicies of a list must be ints. Division yields float. For Python 3
+        # indices of a list must be ints. Division yields float. For Python 3
         xy = [point % img.width, int(point / img.width)]
         pixel = img.getpixel((xy[0], xy[1]))
 
