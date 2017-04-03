@@ -127,7 +127,7 @@ def place_pixel(ax, ay, new_color):
                    data={"x": str(ax), "y": str(ay), "color": str(new_color)})
     except:
         print("Pixel post error! Pausing for 10 seconds...")
-        sleep(10)
+        time.sleep(10)
         return
 
     secs = float(r.json()["wait_seconds"])
@@ -159,6 +159,7 @@ while True:
     points = range(total)
     random.shuffle(points)
 
+    foundCorruption = False
     for i in range(total):
         point = points[i]
         xy = [point % img.width, point / img.width]
@@ -174,5 +175,10 @@ while True:
             if(canvas[ax][ay] != pal):
                 print("Found corruption after {} pixels at {},{}. Expected: {}, Found: {}".format(i, ax, ay, pal, canvas[ax][ay]))
                 place_pixel(ax, ay, pal)
+                foundCorruption = True
                 break
+
+    if not foundCorruption:
+        print('Didn\'t find any corrupted pixels. Yay! Searching again in 15 seconds...')
+        time.sleep(15)
     print('')
