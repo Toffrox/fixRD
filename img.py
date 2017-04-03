@@ -52,8 +52,9 @@ def updateImg():
         return True
     except SystemExit:
         raise SystemExit
-    #except:
-    #    print("Failed to fetch new image or the origin! Will try next time! Waiting 5 seconds and trying again...")
+    except:
+        print("Failed to fetch new image or the origin! Waiting 5 secoonds...")
+        time.sleep(5)
 
 def find_palette(point):
     rgb_code_dictionary = {
@@ -114,8 +115,13 @@ def fetch_canvas():
 
     for i, b in enumerate(content):
         x = (i * 2) % width
-        pixels[x].append(ord(b) >> 4)
-        pixels[x+1].append(ord(b) & 0x0F)
+        # b is already int in Python 3
+        try:
+            b = ord(b)
+        except:
+            pass
+        pixels[x].append(b >> 4)
+        pixels[x+1].append(b & 0x0F)
 
     return pixels
 
@@ -156,13 +162,15 @@ while True:
     print("Searching for corruption in image with height: {}, width: {}".format(img.height, img.width))
     
     total = img.width * img.height
-    points = range(total)
+    # Python 3. Can't shuffle ranges
+    points = list(range(total))
     random.shuffle(points)
 
     foundCorruption = False
     for i in range(total):
         point = points[i]
-        xy = [point % img.width, point / img.width]
+        # indicies of a list must be ints. Division yields float. For Python 3
+        xy = [point % img.width, int(point / img.width)]
         pixel = img.getpixel((xy[0], xy[1]))
 
         if pixel[3] > 0:
