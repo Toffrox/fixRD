@@ -175,4 +175,4 @@ while True:
                 print("Found corruption after {} pixels at {},{}. Expected: {}, Found: {}".format(i, ax, ay, pal, canvas[ax][ay]))
                 place_pixel(ax, ay, pal)
                 break
-    print()
+    print('')
