@@ -139,9 +139,11 @@ def place_pixel(ax, ay, new_color):
     secs = float(r.json()["wait_seconds"])
     waitTime = int(secs) + 2
     if "error" not in r.json():
-        message = "Placed color successfully. Starting search for next pixel in {} seconds."
+        print("Placed color successfully.")
+        message = "Starting search for next pixel in {} seconds."
     else:
-        message = "Cooldown already active! Waiting for {} seconds."
+        print("Cooldown already active!")
+        message = "Waiting for {} seconds."
     while(waitTime > 0):
         print(message.format(waitTime))
         if(waitTime > 35):
